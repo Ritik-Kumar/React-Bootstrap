@@ -2,11 +2,11 @@ import React from 'react';
 import { Card, CardImg, CardBody, CardText, CardTitle, Breadcrumb, BreadcrumbItem, Button, Modal, ModalBody, ModalHeader, Row, Col, Label } from 'reactstrap';
 import { Link } from 'react-router-dom';
 import { Control, LocalForm, Errors } from 'react-redux-form';
+import { Loading } from './LoadingComponent'
 
 const required = (val) => val && val.length;
 const maxLength = (len) => (val) => !(val) || (val.length <= len);
 const minLength = (len) => (val) => val && (val.length >= len);
-
 
 class CommentForm extends React.Component {
 
@@ -16,6 +16,7 @@ class CommentForm extends React.Component {
       isModalOpen: false
     };
     this.toggleModal = this.toggleModal.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
   }
 
   toggleModal() {
@@ -25,9 +26,8 @@ class CommentForm extends React.Component {
   }
 
   handleSubmit(values) {
-    console.log("Current state : " + JSON.stringify(values));
-    alert("Current state : " + JSON.stringify(values));
     this.toggleModal();
+    this.props.addComment(this.props.dishId, values.rating, values.author, values.comment)
   };
 
   render() {
@@ -52,22 +52,23 @@ class CommentForm extends React.Component {
                 <Row>
                   <Control.select
                     model=".rating" id="rating" name="rating" className="form-control"
+                    defaultValue="1"
                   >
-                    <option>1</option>
-                    <option>2</option>
-                    <option>3</option>
-                    <option>4</option>
-                    <option>5</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
                   </Control.select>
                 </Row>
               </div>
 
               <div className="form-group">
                 <Row>
-                  <Label htmlFor="fullname" >Your Name</Label>
+                  <Label htmlFor="author" >Your Name</Label>
                 </Row>
                 <Row>
-                  <Control.text model=".fullname" id="fullname" name="fullname"
+                  <Control.text model=".author" id="author" name="author"
                     placeholder="Name"
                     className="form-control"
                     validators={{
@@ -76,7 +77,7 @@ class CommentForm extends React.Component {
                   />
                   <Errors
                     className="text-danger"
-                    model=".fullname"
+                    model=".author"
                     show="touched"
                     messages={{
                       required: 'Required',
@@ -90,12 +91,12 @@ class CommentForm extends React.Component {
               <div className="form-group" >
 
                 <Row>
-                  <Label htmlFor="message">Your Feedback</Label>
+                  <Label htmlFor="comment">Your Feedback</Label>
                 </Row>
 
                 <Row>
                   <Control.textarea
-                    model=".message" id="message" name="message"
+                    model=".comment" id="comment" name="comment"
                     rows="6" className="form-control"
                   />
                 </Row>
@@ -132,7 +133,7 @@ const RenderDish = ({ dish }) => {
 };
 
 
-const RenderComments = ({ comments }) => {
+const RenderComments = ({ comments, addComment, dishId }) => {
   const comment = comments.map((comment) => {
     return (
       <li key={comment.id}>
@@ -150,29 +151,53 @@ const RenderComments = ({ comments }) => {
         <ul className="list-unstyled">
           {comment}
         </ul>
-        <CommentForm />
+        <CommentForm dishId={dishId} addComment={addComment} />
       </div>
     )
   }
 };
 
-const Dishdetail = ({ dish, comments }) => {
-  return (
+const Dishdetail = ({ dish, comments, addComment, isLoading, errMess }) => {
+  if (isLoading) {
+    return (
+      <div className="container">
+        <div className="row">
+          <Loading />
+        </div>
+      </div>
+    );
+  }
+  else if (errMess) {
+    return (
+      <div className="container">
+        <div className="row">
+          <h4>{errMess}</h4>
+        </div>
+      </div>
+    );
+  }
+  else {
+    return (
 
-    <div className="container">
-      <div className="row">
-        <Breadcrumb>
-          <BreadcrumbItem><Link to="/menu">Menu</Link></BreadcrumbItem>
-          <BreadcrumbItem active>{dish.name}</BreadcrumbItem>
-        </Breadcrumb>
-        <div className="col-12"><h3>{dish.name}</h3></div>
+      <div className="container">
+        <div className="row">
+          <Breadcrumb>
+            <BreadcrumbItem><Link to="/menu">Menu</Link></BreadcrumbItem>
+            <BreadcrumbItem active>{dish.name}</BreadcrumbItem>
+          </Breadcrumb>
+          <div className="col-12"><h3>{dish.name}</h3></div>
+        </div>
+        <div className="row">
+          <RenderDish dish={dish} />
+          <RenderComments
+            comments={comments}
+            addComment={addComment}
+            dishId={dish.id}
+          />
+        </div>
       </div>
-      <div className="row">
-        <RenderDish dish={dish} />
-        <RenderComments comments={comments} />
-      </div>
-    </div>
-  );
+    );
+  }
 }
 
 export default Dishdetail;
